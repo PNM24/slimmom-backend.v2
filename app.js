@@ -8,6 +8,7 @@ const authRouter = require("./routes/api/authRoutes");
 const productsRouter = require("./routes/api/productRoutes");
 const calorieInfoRoutes = require("./routes/api/calorieInfoRoutes");
 const { swaggerUi, specs } = require("./swagger");
+const emailService = require('./services/emailServices');
 
 const app = express();
 
@@ -35,5 +36,15 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
+
+// Verifică configurația email-ului la pornire
+emailService.verifyConnection()
+  .then(isReady => {
+    if (isReady) {
+      console.log('Email service is configured correctly');
+    } else {
+      console.error('Email service configuration failed');
+    }
+  });
 
 module.exports = app;

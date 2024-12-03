@@ -20,8 +20,16 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["user", "admin"], //! Adăugăm roluri posibile
+    enum: ["user", "admin"], 
     default: "user",
+  },
+  otp: {
+    code: String,
+    expiry: Date,
+    verified: {
+      type: Boolean,
+      default: false
+    }
   },
   calorieInfo: {
     height: Number,
@@ -40,6 +48,20 @@ userSchema.methods.setPassword = function (password) {
 
 userSchema.methods.validPassword = function (password) {
   return bcrypt.compareSync(password, this.password);
+};
+
+userSchema.methods.generateOTP = function() {
+  const otp = Math.floor(100000 + Math.random() * 900000); // 6 cifre
+  this.otp = {
+    code: otp.toString(),
+    expiry: new Date(Date.now() + 10 * 60 * 1000), // 10 minute
+    verified: false
+  };
+  return otp;
+};
+
+userSchema.methods.verifyOTP = function(code) {
+  return this.otp.code === code && new Date() < this.otp.expiry;
 };
 
 const User = mongoose.model("User", userSchema);
