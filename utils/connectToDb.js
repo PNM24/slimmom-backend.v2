@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 
 const connectToDb = async () => {
-  console.log("DB_HOST:", process.env.DB_HOST); // Depanare: verifică dacă DB_HOST este definit
 
   try {
     await mongoose.connect(process.env.DB_HOST, {

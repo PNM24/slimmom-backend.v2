@@ -66,6 +66,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
+
 //! Endpoint pentru deconectare
 router.post("/logout", (req, res) => {
   // TODO Pe partea clientului, token-ul ar trebui eliminat (de ex. din localStorage)
@@ -74,3 +75,189 @@ router.post("/logout", (req, res) => {
 });
 
 module.exports = router;
+
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - name
+ *         - email
+ *         - password
+ *       properties:
+ *         name:
+ *           type: string
+ *           description: Numele utilizatorului
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: Email-ul utilizatorului
+ *         password:
+ *           type: string
+ *           format: password
+ *           description: Parola utilizatorului
+ *         role:
+ *           type: string
+ *           enum: [user, admin]
+ *           default: user
+ *           description: Rolul utilizatorului
+ *         calorieInfo:
+ *           type: object
+ *           properties:
+ *             height:
+ *               type: number
+ *               description: Înălțimea în centimetri
+ *             age:
+ *               type: number
+ *               description: Vârsta
+ *             currentWeight:
+ *               type: number
+ *               description: Greutatea actuală
+ *             desireWeight:
+ *               type: number
+ *               description: Greutatea dorită
+ *             bloodType:
+ *               type: number
+ *               description: Grupa de sânge
+ *             dailyRate:
+ *               type: number
+ *               description: Rata zilnică de calorii
+ *             notRecommendedFoods:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               description: Lista de alimente nerecomandate
+ * 
+ *     AuthResponse:
+ *       type: object
+ *       properties:
+ *         token:
+ *           type: string
+ *           description: Token-ul JWT pentru autentificare
+ *         user:
+ *           type: object
+ *           properties:
+ *             name:
+ *               type: string
+ *             email:
+ *               type: string
+ *             role:
+ *               type: string
+ * 
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ * 
+ * tags:
+ *   name: Auth
+ *   description: API pentru autentificare și gestiunea utilizatorilor
+ */
+
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Înregistrare utilizator nou
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "John Doe"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john@example.com"
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: "strongPassword123"
+ *     responses:
+ *       201:
+ *         description: Utilizator înregistrat cu succes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Date invalide sau utilizator existent
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Eroare server
+ * 
+ * /api/auth/login:
+ *   post:
+ *     summary: Autentificare utilizator
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john@example.com"
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: "strongPassword123"
+ *     responses:
+ *       200:
+ *         description: Autentificare reușită
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Credențiale invalide
+ *       500:
+ *         description: Eroare server
+ * 
+ * /api/auth/logout:
+ *   post:
+ *     summary: Deconectare utilizator
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Deconectare reușită
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User logged out successfully"
+ *       401:
+ *         description: Neautorizat
+ *       500:
+ *         description: Eroare server
+ */

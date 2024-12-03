@@ -27,27 +27,18 @@ const router = express.Router();
  *           description: The title of the product
  *         weight:
  *           type: number
- *           description: The weight of the product
+ *           description: The weight of the product in grams
  *         calories:
  *           type: number
- *           description: The calories of the product
+ *           description: The calories per 100g of product
  *         categories:
+ *           type: string
+ *           description: The category of the product
+ *         groupBloodNotAllowed:
  *           type: array
  *           items:
- *             type: string
- *           description: The categories of the product
- *         groupBloodNotAllowed:
- *           type: object
- *           properties:
- *             1:
- *               type: boolean
- *             2:
- *               type: boolean
- *             3:
- *               type: boolean
- *             4:
- *               type: boolean
- *           description: The blood type groups for which the product is not allowed
+ *             type: boolean
+ *           description: Array indicating if product is not allowed for each blood type
  *     ConsumedProduct:
  *       type: object
  *       required:
@@ -64,38 +55,56 @@ const router = express.Router();
  *           description: The id of the user who consumed the product
  *         productId:
  *           type: string
- *           description: The id of the product
+ *           description: The id of the product consumed
  *         date:
  *           type: string
  *           format: date
  *           description: The date when the product was consumed
  *         quantity:
  *           type: number
- *           description: The quantity of the product consumed
+ *           description: The quantity consumed in grams
+ *     DailyIntakeInfo:
+ *       type: object
+ *       properties:
+ *         dailyKcal:
+ *           type: number
+ *           description: Recommended daily calorie intake
+ *         notRecommendedProducts:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Product'
+ *           description: List of products not recommended for user's blood type
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
  */
 
 /**
  * @swagger
  * tags:
  *   name: Products
- *   description: API for managing products
+ *   description: API endpoints for managing products and daily intake
  */
 
 /**
  * @swagger
  * /api/products:
  *   get:
- *     summary: Get all products
+ *     summary: Retrieve all products
  *     tags: [Products]
  *     responses:
  *       200:
- *         description: The list of products
+ *         description: List of all products
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Product'
+ *       500:
+ *         description: Server error
  */
 router.get("/", async (req, res) => {
   try {
@@ -122,13 +131,15 @@ router.get("/", async (req, res) => {
  *             $ref: '#/components/schemas/Product'
  *     responses:
  *       201:
- *         description: The product was created
+ *         description: Product created successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Product'
  *       400:
- *         description: Bad request
+ *         description: Invalid input data
+ *       401:
+ *         description: Unauthorized
  */
 router.post("/", validateAuth, authorizeRoles("admin"), async (req, res) => {
   const product = new Product({
@@ -151,49 +162,42 @@ router.post("/", validateAuth, authorizeRoles("admin"), async (req, res) => {
  * @swagger
  * /api/products/daily-intake:
  *   get:
- *     summary: Get daily intake and not recommended products
+ *     summary: Get daily intake recommendations
  *     tags: [Products]
  *     parameters:
  *       - in: query
  *         name: weight
+ *         required: true
  *         schema:
  *           type: number
- *         required: true
- *         description: The weight of the user
+ *         description: User's weight in kg
  *       - in: query
  *         name: height
+ *         required: true
  *         schema:
  *           type: number
- *         required: true
- *         description: The height of the user
+ *         description: User's height in cm
  *       - in: query
  *         name: age
+ *         required: true
  *         schema:
  *           type: number
- *         required: true
- *         description: The age of the user
+ *         description: User's age in years
  *       - in: query
  *         name: bloodType
- *         schema:
- *           type: string
  *         required: true
- *         description: The blood type of the user
+ *         schema:
+ *           type: number
+ *         description: User's blood type (1-4)
  *     responses:
  *       200:
- *         description: The daily intake and not recommended products
+ *         description: Daily intake recommendations
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 dailyKcal:
- *                   type: number
- *                 notRecommendedProducts:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Product'
+ *               $ref: '#/components/schemas/DailyIntakeInfo'
  *       400:
- *         description: Invalid input
+ *         description: Invalid parameters
  */
 router.get("/daily-intake", async (req, res) => {
   try {
@@ -222,155 +226,9 @@ router.get("/daily-intake", async (req, res) => {
 
 /**
  * @swagger
- * /api/products/daily-intake:
- *   post:
- *     summary: Save daily intake info for authenticated user
- *     tags: [Products]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               weight:
- *                 type: number
- *               height:
- *                 type: number
- *               age:
- *                 type: number
- *               bloodType:
- *                 type: string
- *     responses:
- *       200:
- *         description: Daily intake info saved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 dailyKcal:
- *                   type: number
- *                 notRecommendedProducts:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Product'
- *       400:
- *         description: Invalid input
- */
-router.post("/daily-intake", validateAuth, async (req, res) => {
-  try {
-    const { weight, height, age, bloodType } = req.body;
-    const userId = req.user._id;
-
-    const dailyKcal = calculateCalories(weight, height, age);
-    if (dailyKcal === null) {
-      return res
-        .status(400)
-        .json({ message: "Please provide valid weight, height, and age" });
-    }
-
-    const bloodTypeIndex = parseInt(bloodType, 10);
-    const products = await Product.find({
-      [`groupBloodNotAllowed.${bloodTypeIndex}`]: true,
-    });
-
-    const notRecommendedProducts = products.map((product) => product.title);
-
-    const dailyIntake = new DailyIntake({
-      userId,
-      weight,
-      height,
-      age,
-      dailyKcal,
-      notRecommendedProducts,
-    });
-
-    await dailyIntake.save();
-
-    res.json({
-      dailyKcal,
-      notRecommendedProducts,
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-/**
- * @swagger
- * /api/products/search:
- *   get:
- *     summary: Search products
- *     tags: [Products]
- *     parameters:
- *       - in: query
- *         name: query
- *         schema:
- *           type: string
- *         required: true
- *         description: The search query
- *       - in: query
- *         name: bloodType
- *         schema:
- *           type: string
- *         required: true
- *         description: The blood type of the user
- *     responses:
- *       200:
- *         description: The list of products matching the search query
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Product'
- *       400:
- *         description: Query string is required
- *       500:
- *         description: Internal server error
- */
-router.get("/search", async (req, res) => {
-  try {
-    const { query, bloodType } = req.query;
-    if (!query) {
-      return res.status(400).json({ message: "Query string is required" });
-    }
-
-    if (!bloodType) {
-      return res.status(400).json({ message: "Blood type is required" });
-    }
-
-    const bloodTypeIndex = parseInt(bloodType, 10);
-
-    //* Căutare produse pe baza titlului sau categoriilor și excluderea celor nerecomandate:
-    const products = await Product.find({
-      $and: [
-        {
-          $or: [
-            { title: { $regex: query, $options: "i" } },
-            { categories: { $regex: query, $options: "i" } },
-          ],
-        },
-        {
-          [`groupBloodNotAllowed.${bloodTypeIndex}`]: false,
-        },
-      ],
-    });
-
-    res.json(products);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-/**
- * @swagger
  * /api/products/consumed:
  *   post:
- *     summary: Add consumed product
+ *     summary: Record consumed product
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -380,6 +238,10 @@ router.get("/search", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - productId
+ *               - date
+ *               - quantity
  *             properties:
  *               productId:
  *                 type: string
@@ -390,20 +252,21 @@ router.get("/search", async (req, res) => {
  *                 type: number
  *     responses:
  *       201:
- *         description: Consumed product added successfully
+ *         description: Consumed product recorded
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ConsumedProduct'
- *       500:
- *         description: Internal server error
+ *       400:
+ *         description: Invalid input
+ *       404:
+ *         description: Product not found
  */
 router.post("/consumed", validateAuth, async (req, res) => {
   try {
     const { productId, date, quantity } = req.body;
     const userId = req.user._id;
 
-    //* Verificăm dacă produsul există:
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -417,51 +280,7 @@ router.post("/consumed", validateAuth, async (req, res) => {
     });
 
     await consumedProduct.save();
-
     res.status(201).json(consumedProduct);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-/**
- * @swagger
- * /api/products/consumed/{id}:
- *   delete:
- *     summary: Delete consumed product
- *     tags: [Products]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: The id of the consumed product to delete
- *     responses:
- *       200:
- *         description: Consumed product deleted successfully
- *       404:
- *         description: Consumed product not found
- */
-router.delete("/consumed/:id", validateAuth, async (req, res) => {
-  try {
-    const consumedProductId = req.params.id;
-    const userId = req.user._id;
-
-    //* Verificăm dacă înregistrarea produsului consumat există și aparține utilizatorului:
-    const consumedProduct = await ConsumedProduct.findOne({
-      _id: consumedProductId,
-      userId,
-    });
-    if (!consumedProduct) {
-      return res.status(404).json({ message: "Consumed product not found" });
-    }
-
-    await ConsumedProduct.deleteOne({ _id: consumedProductId });
-
-    res.status(200).json({ message: "Consumed product deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -471,21 +290,21 @@ router.delete("/consumed/:id", validateAuth, async (req, res) => {
  * @swagger
  * /api/products/day-info:
  *   get:
- *     summary: Get day info
+ *     summary: Get daily consumption information
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: date
+ *         required: true
  *         schema:
  *           type: string
  *           format: date
- *         required: true
- *         description: The date to get info for
+ *         description: Date to get information for
  *     responses:
  *       200:
- *         description: Day info retrieved successfully
+ *         description: Daily consumption info
  *         content:
  *           application/json:
  *             schema:
@@ -502,32 +321,28 @@ router.delete("/consumed/:id", validateAuth, async (req, res) => {
  *                     $ref: '#/components/schemas/ConsumedProduct'
  *       400:
  *         description: Date is required
- *       404:
- *         description: No consumed products found
+ *       401:
+ *         description: Unauthorized
  */
 router.get("/day-info", validateAuth, async (req, res) => {
   try {
     const { date } = req.query;
     const userId = req.user._id;
 
-    //* Verificăm dacă data este furnizată:
     if (!date) {
       return res.status(400).json({ message: "Date is required" });
     }
 
-    //* Convertim data la formatul corect:
     const startDate = new Date(date);
     startDate.setHours(0, 0, 0, 0);
     const endDate = new Date(date);
     endDate.setHours(23, 59, 59, 999);
 
-    //* Găsim toate produsele consumate în acea zi de către utilizator:
     const consumedProducts = await ConsumedProduct.find({
       userId,
       date: { $gte: startDate, $lte: endDate },
     }).populate("productId");
 
-    //* Calculăm totalul caloriilor consumate:
     let totalCalories = 0;
     consumedProducts.forEach((consumedProduct) => {
       const productCaloriesPerGram =
@@ -539,6 +354,60 @@ router.get("/day-info", validateAuth, async (req, res) => {
       date: startDate,
       totalCalories,
       consumedProducts,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   delete:
+ *     summary: Delete a product
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the product to delete
+ *     responses:
+ *       200:
+ *         description: Product deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Product deleted successfully"
+ *       401:
+ *         description: Unauthorized - Only admins can delete products
+ *       404:
+ *         description: Product not found
+ *       500:
+ *         description: Server error
+ */
+router.delete("/:id", validateAuth, authorizeRoles("admin"), async (req, res) => {
+  try {
+    const productId = req.params.id;
+    
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    await Product.findByIdAndDelete(productId);
+    
+    res.status(200).json({ 
+      message: "Product deleted successfully",
+      deletedProduct: product 
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
