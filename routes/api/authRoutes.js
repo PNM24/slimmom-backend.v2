@@ -40,7 +40,7 @@ router.post("/register", async (req, res) => {
 
     await newUser.save();
 
-    // Trimitem atât email-ul de verificare cât și cel de bun venit
+    // Trimitem atât email-ul de verificare cât și cel de bun venit,
     const otpSent = await emailService.sendOTPEmail(email, otp);
     const welcomeSent = await emailService.sendWelcomeEmail(email, name);
 
