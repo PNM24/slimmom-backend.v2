@@ -1,16 +1,16 @@
 require("dotenv").config();
-const app = require("./app");
+const express = require("express");
+const app = express();
 const colors = require("colors");
 
 const PORT = process.env.PORT || 3000;
 
-
+// Definește ruta de bază înainte de app.listen
 app.get('/', (req, res) => {
-  res.send('Server is running!');
+  res.send('API is running successfully!');
 });
 
+// Pornește serverul
 app.listen(PORT, () => {
-  console.log(
-    colors.bgBlue.italic.bold(`Server is running. Use our API on port: ${PORT}`)
-  );
+  console.log(`Server is running. Use our API on port: ${PORT}`.green);
 });
