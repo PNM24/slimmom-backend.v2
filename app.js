@@ -20,12 +20,7 @@ connectToDb();
 // Middleware-uri globale
 app.use(express.static("public")); // Servire fișiere statice din directorul public
 app.use(logger(formatsLogger)); // Logger pentru cereri
-app.use(cors({
-  origin: ["https://pnm24.github.io"], // Permite cereri doar din frontend-ul specificat
-  methods: ["GET", "POST", "PUT", "DELETE"], // Metode permise
-  allowedHeaders: ["Content-Type", "Authorization"], // Header-uri permise
-  credentials: true, // Permite cookie-uri și autentificare
-}));
+app.use(cors())
 app.use(express.json()); // Parsează cererile cu corp JSON
 
 // Rute API
