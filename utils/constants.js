@@ -1,8 +1,9 @@
+/**
+ * Coduri de status HTTP utilizate în răspunsurile API.
+ */
 const STATUS_CODES = {
   success: 200,
   created: 201,
-  found: 302,
-  seeOther: 303,
   badRequest: 400,
   unauthorized: 401,
   forbidden: 403,

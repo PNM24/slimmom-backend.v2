@@ -1,23 +1,5 @@
 const mongoose = require("mongoose");
 
-// {
-//   "_id": {
-//     "$oid": "5d51694802b2373622ff5543"
-//   },
-//   "categories": "cereals",
-//   "weight": 100,
-//   "title": "Amaranth",
-//   "calories": 371,
-//   "groupBloodNotAllowed": [
-//     null,
-//     true,
-//     false,
-//     false,
-//     false
-//   ],
-//   "__v": 0
-// }
-
 const productSchema = new mongoose.Schema({
   categories: {
     type: String,

@@ -1,16 +1,12 @@
-require("dotenv").config();
-const express = require("express");
-const app = express();
-const colors = require("colors");
+const app = require("./app"); // Importă aplicația Express din app.js
+const dotenv = require("dotenv");
 
+dotenv.config();
+
+// Portul pe care rulează serverul
 const PORT = process.env.PORT || 3000;
 
-// Definește ruta de bază înainte de app.listen
-app.get('/', (req, res) => {
-  res.send('API is running successfully!');
-});
-
-// Pornește serverul
+// Pornirea serverului
 app.listen(PORT, () => {
-  console.log(`Server is running. Use our API on port: ${PORT}`.green);
+  console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || "development"} mode.`);
 });

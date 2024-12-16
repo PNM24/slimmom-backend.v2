@@ -23,7 +23,7 @@ const dailyIntakeSchema = new mongoose.Schema({
     required: true,
   },
   notRecommendedProducts: {
-    type: [String], // Stocăm titlurile produselor nerecomandate
+    type: [String],
     required: true,
   },
   date: {

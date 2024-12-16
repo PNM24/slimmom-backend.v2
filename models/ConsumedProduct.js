@@ -21,9 +21,6 @@ const consumedProductSchema = new mongoose.Schema({
   },
 });
 
-const ConsumedProduct = mongoose.model(
-  "ConsumedProduct",
-  consumedProductSchema
-);
+const ConsumedProduct = mongoose.model("ConsumedProduct", consumedProductSchema);
 
 module.exports = ConsumedProduct;

@@ -1,104 +1,28 @@
-const swaggerJsdoc = require("swagger-jsdoc");
-const swaggerUi = require("swagger-ui-express");
+const swaggerJSDoc = require("swagger-jsdoc");
 
+// Configurarea Swagger
 const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "API Documentation",
+      title: "SlimMom Backend API",
       version: "1.0.0",
-      description: "API documentation using Swagger",
+      description: "Documentație completă pentru API-ul SlimMom Backend.",
     },
     servers: [
       {
         url: "http://localhost:3000",
+        description: "Server local",
+      },
+      {
+        url: "https://slimmom-backend-v2.onrender.com",
+        description: "Server live pe Render.com",
       },
     ],
-    components: {
-      schemas: {
-        Product: {
-          type: "object",
-          required: [
-            "title",
-            "weight",
-            "calories",
-            "categories",
-            "groupBloodNotAllowed",
-          ],
-          properties: {
-            _id: {
-              type: "string",
-              description: "The auto-generated id of the product",
-            },
-            title: { type: "string", description: "The title of the product" },
-            weight: {
-              type: "number",
-              description: "The weight of the product",
-            },
-            calories: {
-              type: "number",
-              description: "The calories of the product",
-            },
-            categories: {
-              type: "array",
-              items: { type: "string" },
-              description: "The categories of the product",
-            },
-            groupBloodNotAllowed: {
-              type: "object",
-              properties: {
-                1: { type: "boolean" },
-                2: { type: "boolean" },
-                3: { type: "boolean" },
-                4: { type: "boolean" },
-              },
-              description:
-                "The blood type groups for which the product is not allowed",
-            },
-          },
-        },
-        ConsumedProduct: {
-          type: "object",
-          required: ["userId", "productId", "date", "quantity"],
-          properties: {
-            _id: {
-              type: "string",
-              description: "The auto-generated id of the consumed product",
-            },
-            userId: {
-              type: "string",
-              description: "The id of the user who consumed the product",
-            },
-            productId: { type: "string", description: "The id of the product" },
-            date: {
-              type: "string",
-              format: "date",
-              description: "The date when the product was consumed",
-            },
-            quantity: {
-              type: "number",
-              description: "The quantity of the product consumed",
-            },
-          },
-        },
-      },
-      securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
-        },
-      },
-    },
   },
-  apis: ["./routes/api/*.js"], // Calea către fișierele cu rute
+  apis: ["./routes/api/*.js"], // Include toate fișierele de rute
 };
 
-const specs = swaggerJsdoc(options);
+const swaggerSpec = swaggerJSDoc(options);
 
-module.exports = { swaggerUi, specs };
-
-/**
- * Pornește serverul și accesează documentația API la adresa:
- *  http://localhost:3000/api-docs.
- */
+module.exports = swaggerSpec;

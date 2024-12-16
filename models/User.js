@@ -1,4 +1,3 @@
-// models/User.js
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
@@ -20,7 +19,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["user", "admin"], 
+    enum: ["user", "admin"],
     default: "user",
   },
   otp: {
@@ -28,8 +27,8 @@ const userSchema = new mongoose.Schema({
     expiry: Date,
     verified: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   calorieInfo: {
     height: Number,
@@ -42,25 +41,29 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+// Hash password
 userSchema.methods.setPassword = function (password) {
   this.password = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
 };
 
+// Validate password
 userSchema.methods.validPassword = function (password) {
   return bcrypt.compareSync(password, this.password);
 };
 
-userSchema.methods.generateOTP = function() {
-  const otp = Math.floor(100000 + Math.random() * 900000); // 6 cifre
+// Generate OTP
+userSchema.methods.generateOTP = function () {
+  const otp = Math.floor(100000 + Math.random() * 900000);
   this.otp = {
     code: otp.toString(),
     expiry: new Date(Date.now() + 10 * 60 * 1000), // 10 minute
-    verified: false
+    verified: false,
   };
   return otp;
 };
 
-userSchema.methods.verifyOTP = function(code) {
+// Verify OTP
+userSchema.methods.verifyOTP = function (code) {
   return this.otp.code === code && new Date() < this.otp.expiry;
 };
 
