@@ -42,40 +42,6 @@ router.post("/register", async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/auth/register:
- *   post:
- *     summary: Înregistrare utilizator nou
- *     description: Creează un cont nou pentru utilizator.
- *     tags: [Autentificare]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - email
- *               - password
- *             properties:
- *               name:
- *                 type: string
- *                 example: John Doe
- *               email:
- *                 type: string
- *                 example: johndoe@example.com
- *               password:
- *                 type: string
- *                 example: "123456"
- *     responses:
- *       201:
- *         description: User registered successfully.
- *       400:
- *         description: User already exists.
- */
-
 // Endpoint: Verificare OTP
 router.post("/verify-otp", async (req, res) => {
   const { email, otp } = req.body;
@@ -119,12 +85,29 @@ router.post("/login", async (req, res) => {
   }
 });
 
+
+
+// Endpoint: Logout utilizator
+router.post("/logout", async (req, res) => {
+  const { refreshToken } = req.body;
+
+  try {
+    await Session.deleteOne({ refreshToken });
+    res.json({ message: "Logged out successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+module.exports = router;
+
+
 /**
  * @swagger
- * /api/auth/login:
+ * /api/auth/register:
  *   post:
- *     summary: Autentificare utilizator
- *     description: Login pentru utilizatori existenți.
+ *     summary: Înregistrare utilizator nou
  *     tags: [Autentificare]
  *     requestBody:
  *       required: true
@@ -132,9 +115,62 @@ router.post("/login", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - email
- *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: John Doe
+ *               email:
+ *                 type: string
+ *                 example: johndoe@example.com
+ *               password:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       201:
+ *         description: User registered successfully.
+ *       400:
+ *         description: User already exists.
+ */
+
+/**
+ * @swagger
+ * /api/auth/verify-otp:
+ *   post:
+ *     summary: Verificare OTP
+ *     tags: [Autentificare]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: johndoe@example.com
+ *               otp:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: OTP verified successfully.
+ *       400:
+ *         description: Invalid or expired OTP.
+ */
+
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Autentificare utilizator
+ *     tags: [Autentificare]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
  *             properties:
  *               email:
  *                 type: string
@@ -149,17 +185,6 @@ router.post("/login", async (req, res) => {
  *         description: Invalid email or password.
  */
 
-// Endpoint: Logout utilizator
-router.post("/logout", async (req, res) => {
-  const { refreshToken } = req.body;
-
-  try {
-    await Session.deleteOne({ refreshToken });
-    res.json({ message: "Logged out successfully" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
 
 /**
  * @swagger
@@ -186,5 +211,3 @@ router.post("/logout", async (req, res) => {
  *       500:
  *         description: Server error.
  */
-
-module.exports = router;

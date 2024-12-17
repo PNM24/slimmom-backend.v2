@@ -58,9 +58,20 @@ module.exports = router;
 
 /**
  * @swagger
+ * /api/products:
+ *   get:
+ *     summary: Obține lista tuturor produselor
+ *     tags: [Produse]
+ *     responses:
+ *       200:
+ *         description: Returnează lista de produse.
+ */
+
+/**
+ * @swagger
  * /api/products/search:
  *   get:
- *     summary: Caută produse
+ *     summary: Caută produse după titlu
  *     tags: [Produse]
  *     parameters:
  *       - in: query
@@ -71,8 +82,56 @@ module.exports = router;
  *         description: Titlul produsului căutat
  *     responses:
  *       200:
- *         description: Returnează lista produselor găsite.
- *       400:
- *         description: Query parameter 'title' is missing.
+ *         description: Returnează produsele găsite.
  */
 
+/**
+ * @swagger
+ * /api/products/consumed:
+ *   post:
+ *     summary: Adaugă un produs consumat
+ *     tags: [Produse]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               productId:
+ *                 type: string
+ *                 example: "60d21b4667d0d8992e610c85"
+ *               date:
+ *                 type: string
+ *                 example: "2024-06-12"
+ *               quantity:
+ *                 type: number
+ *                 example: 200
+ *     responses:
+ *       201:
+ *         description: Consumed product added successfully.
+ */
+
+/**
+ * @swagger
+ * /api/products/consumed/{id}:
+ *   delete:
+ *     summary: Șterge un produs consumat
+ *     tags: [Produse]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID-ul produsului consumat
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Consumed product deleted successfully.
+ *       404:
+ *         description: Product not found.
+ */

@@ -1,13 +1,12 @@
 const swaggerJSDoc = require("swagger-jsdoc");
 
-// Configurarea Swagger
 const options = {
   definition: {
     openapi: "3.0.0",
     info: {
       title: "SlimMom Backend API",
       version: "1.0.0",
-      description: "Documentație completă pentru API-ul SlimMom Backend.",
+      description: "Documentație completă pentru API-ul SlimMom.",
     },
     servers: [
       {
@@ -19,8 +18,23 @@ const options = {
         description: "Server live pe Render.com",
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "Introduceți token-ul JWT în format Bearer.",
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
   },
-  apis: ["./routes/api/*.js"], // Include toate fișierele de rute
+  apis: ["./routes/api/*.js"], // Include fișierele unde sunt definite rutele
 };
 
 const swaggerSpec = swaggerJSDoc(options);
