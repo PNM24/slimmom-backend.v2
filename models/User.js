@@ -2,71 +2,37 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  role: {
-    type: String,
-    enum: ["user", "admin"],
-    default: "user",
-  },
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
   otp: {
-    code: String,
-    expiry: Date,
-    verified: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  calorieInfo: {
-    height: Number,
-    age: Number,
-    currentWeight: Number,
-    desireWeight: Number,
-    bloodType: Number,
-    dailyRate: Number,
-    notRecommendedFoods: [String],
+    code: { type: String },
+    expiresAt: { type: Date },
+    verified: { type: Boolean, default: false },
   },
 });
 
-// Hash password
+// Metodă pentru setarea parolei
 userSchema.methods.setPassword = function (password) {
-  this.password = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
+  const salt = bcrypt.genSaltSync(10);
+  this.password = bcrypt.hashSync(password, salt);
 };
 
-// Validate password
-userSchema.methods.validPassword = function (password) {
-  return bcrypt.compareSync(password, this.password);
-};
-
-// Generate OTP
+// Metodă pentru generarea OTP
 userSchema.methods.generateOTP = function () {
-  const otp = Math.floor(100000 + Math.random() * 900000);
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
   this.otp = {
-    code: otp.toString(),
-    expiry: new Date(Date.now() + 10 * 60 * 1000), // 10 minute
+    code: otp,
+    expiresAt: new Date(Date.now() + 15 * 60 * 1000), // Valabil 15 minute
     verified: false,
   };
   return otp;
 };
 
-// Verify OTP
-userSchema.methods.verifyOTP = function (code) {
-  return this.otp.code === code && new Date() < this.otp.expiry;
+// Metodă pentru verificarea OTP
+userSchema.methods.verifyOTP = function (otp) {
+  if (this.otp.expiresAt < new Date()) return false; // OTP expirat
+  return this.otp.code === otp;
 };
 
-const User = mongoose.model("User", userSchema);
-
-module.exports = User;
+module.exports = mongoose.model("User", userSchema);

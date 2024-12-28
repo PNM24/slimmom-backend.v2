@@ -25,43 +25,58 @@ const generateRefreshToken = (user) => {
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
 
     const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: "User already exists" });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
 
     const newUser = new User({ name, email });
     newUser.setPassword(password);
-
     const otp = newUser.generateOTP();
     await newUser.save();
 
     await emailService.sendOTPEmail(email, otp);
     res.status(201).json({ message: "User registered. Verify OTP sent to email." });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 });
+
+router.use((req, res, next) => {
+  console.log(`AuthRoutes request: ${req.method} ${req.path}`);
+  next();
+});
+
 
 // Endpoint: Verificare OTP
 router.post("/verify-otp", async (req, res) => {
   const { email, otp } = req.body;
 
   try {
+    // Găsește utilizatorul în baza de date
     const user = await User.findOne({ email });
     if (!user || !user.verifyOTP(otp)) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
+    // Marchează OTP-ul ca verificat
     user.otp.verified = true;
     await user.save();
 
+    // Generează Access Token și Refresh Token
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
     await new Session({ userId: user._id, refreshToken }).save();
 
     res.json({ accessToken, refreshToken });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -70,37 +85,68 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    // Găsește utilizatorul în baza de date
     const user = await User.findOne({ email });
     if (!user || !user.validPassword(password)) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+    // Generează Access Token și Refresh Token
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
     await new Session({ userId: user._id, refreshToken }).save();
 
     res.json({ accessToken, refreshToken });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
-
-
 
 // Endpoint: Logout utilizator
 router.post("/logout", async (req, res) => {
   const { refreshToken } = req.body;
 
   try {
+    // Șterge sesiunea asociată token-ului de refresh
     await Session.deleteOne({ refreshToken });
     res.json({ message: "Logged out successfully" });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
+// Endpoint: Reîmprospătare Access Token
+router.post("/refresh-token", async (req, res) => {
+  const { refreshToken } = req.body;
+
+  try {
+    if (!refreshToken) {
+      return res.status(401).json({ message: "Refresh Token is required" });
+    }
+
+    const session = await Session.findOne({ refreshToken });
+    if (!session) {
+      return res.status(403).json({ message: "Invalid Refresh Token" });
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const accessToken = generateAccessToken(user);
+    res.json({ accessToken });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 module.exports = router;
+
 
 
 /**

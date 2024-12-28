@@ -40,6 +40,10 @@ app.use("/api/calorie-info", calorieInfoRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/session", sessionRoutes);
 
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.path}`);
+  next();
+});
 // Răspuns pentru ruta principală
 app.get("/", (req, res) => {
   res.send("✅ SlimMom Backend API is running...");
